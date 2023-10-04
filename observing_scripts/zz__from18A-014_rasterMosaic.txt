@@ -1,0 +1,79 @@
+########################################################
+#
+#  23 Mar 2018 - Charles Romero, copied from BSM's
+#  /users/bmason/ccbPub/ccbMosaicMap.turtle script.
+#
+#
+#
+#  You can also just use standard RALongMap instead of 
+#   the single trajectory, though this is 
+#   less efficient and may excite more feedarm 
+#   vibration.
+#
+########################################################
+
+
+# the above sources must be in this
+# ASTRID format catalog:
+targetcat=Catalog("/users/cromero/mustangPub/Seasons18_Prior_catalogs/AGBT18A_014_offsets_gal.cat")
+# or in the default catalog...
+Catalog() 
+
+#name='W51'
+#name='W49'
+#name='GAL_031' # AKA W43
+#name='SgrB2' # The Galactic Center to be observed Mar. 31, 2018
+#name='GAL_029'
+#name='GAL_010'
+name='GAL_034'
+#name='SgrB2_half' # offset positively by half a sliver. (1/28 of a degree)
+#name='W33' # To be observed Apr. 30/May 1. 2018
+### DO NOT OBSERVE G031 (well...I just think we should avoid it for now).
+coordSys='Galactic'
+
+############################################################
+### If stripes are in latitude (declination), use this:
+#srclist = [name+'_x'+str(i+4) for i in range(8)]
+defFits  = 'm2_1deg_4rows_25p5arcsec_2p5aps_decLat.fits'
+### Old choices:.
+#defFits  = 'm2_1deg_5rows_2p26arcsec_3p15aps_decLat.fits' #OLD, never used
+#defFits  = 'm2_1deg_4rows_2p825arcsec_2p5aps_decLat.fits' #OLD ONE!!!
+
+############################################################
+### Otherwise, if stripes are in logitude (RA), use this:
+
+srclist = [name+'_y'+str(i+1) for i in range(14)]
+#defFits = 'm2_1p6deg_4rows_25p5arcsec_2p5aps.fits' # Use this for Gal_031
+defFits = 'm2_1deg_4rows_25p5arcsec_2p5aps.fits' # Use this for any other source.
+### Old choices:
+#defFits  = 'm2_1deg_5rows_2p26arcsec_3p15aps.fits' #OLD, never used
+#defFits  = 'm2_1deg_4rows_2p825arcsec_2p5aps.fits' # OLD ONE!
+
+###############################################
+#
+# Define custom scan "dotrajectory" 
+#  also define the function that reads in a trajectory FITS file,
+#  and then use it, to read in some trajectories.
+#
+
+import os
+import sys
+
+trajdir="/users/bmason/gbt-dev/scanning/ptcsTraj"
+if (trajdir not in sys.path):
+	sys.path.append(trajdir)
+from readFitsTraj import readFitsTraj
+
+#
+trajfile = os.path.join(trajdir,defFits)
+# Read in the trajectory
+traj_stripe=readFitsTraj(trajfile,1.0,coordsys=coordSys)
+DefineScan("dotrajectory", "/users/bmason/gbt-dev/scanning/ptcsTraj/dotrajectory.py")
+
+# set an initial configuration and add the weather data to the archivist
+#  if the first source is not a calibrator this also leaves us in a
+#  happy state for CCB observations
+
+for mySrc in srclist:
+   Slew(mySrc)
+   dotrajectory(traj_stripe,location=mySrc, beamName="C", cos_v=True,  coordMode=coordSys)
